@@ -2,7 +2,7 @@
 // Information page (Page 3) and the administrator Edit page (Page 9).
 const pool = require('../db');
 const { serverError } = require('../middleware/errors');
-const { MEDIA_SELECT } = require('./media.query');
+const { MEDIA_SELECT, sumVisits } = require('./media.query');
 const { addMediaThumbnail, addBookThumbnail } = require('../thumbnails');
 
 // ---------------------------------------------------------------- helpers
@@ -142,6 +142,19 @@ function readLimit(value, fallback = 50) {
 
 // ---------------------------------------------------------------- handlers
 
+//GET /media/toprates
+exports.toprates = async (req,res) => {
+  try {
+    const [r] = await pool.query(
+      `${MEDIA_SELECT} ORDER BY m.rating DESC LIMIT 5`
+    );
+    res.json(r.map(addMediaThumbnail));
+  } catch (err) {
+    serverError(res, err);
+  }
+};
+
+
 // GET /media?type=movie|series&genre=&universe=&category=&country=&status=&sort=&limit=
 // Home page: the whole Media joined table, optionally filtered and sorted.
 exports.list = async (req, res) => {
@@ -232,17 +245,16 @@ exports.getOne = async (req, res) => {
       pool.execute(`SELECT id, title, publish_date, rating FROM Media
                     WHERE universe_id = ? AND id <> ? ORDER BY publish_date`,
                     [media.universe_id, id]),
-      pool.execute(`SELECT COUNT(*) AS total,
-                           COALESCE(SUM(visited_at >= NOW() - INTERVAL 7 DAY), 0) AS last_7_days
-                    FROM Media_Visit WHERE id = ?`, [id])
+      pool.execute(`SELECT visits, DATE_FORMAT(CURDATE() - INTERVAL 6 DAY, '%Y-%m-%d') AS since
+                    FROM Media WHERE id = ?`, [id])
     ]);
 
     // Every linked media / book carries its own thumbnail so the page can show banners.
     res.json({
       ...addMediaThumbnail(media),
       subgenres, actors, platforms,
-      visit_count: visits.total,
-      visits_last_7_days: Number(visits.last_7_days),
+      visit_count: sumVisits(visits.visits),
+      visits_last_7_days: sumVisits(visits.visits, visits.since),
       books: books.map(addBookThumbnail),
       sequel_of: addMediaThumbnail(sequelOf[0]) || null,
       sequels: sequels.map(addMediaThumbnail),
@@ -261,10 +273,14 @@ exports.recordVisit = async (req, res) => {
   const id = req.params.id;
   if (!isId(id)) return res.status(400).json({ error: 'id must be a positive id' });
   try {
-    await pool.execute('INSERT INTO Media_Visit (id) VALUES (?)', [id]);
+    const [result] = await pool.execute(`
+      UPDATE Media
+      SET visits = JSON_SET(COALESCE(visits, JSON_OBJECT()), CONCAT('$."', CURDATE(), '"'),
+                            COALESCE(JSON_EXTRACT(visits, CONCAT('$."', CURDATE(), '"')), 0) + 1)
+      WHERE id = ?`, [id]);
+    if (result.affectedRows === 0) return res.status(404).json({ error: 'media not found' });
     res.status(204).end();
   } catch (err) {
-    if (err.code === 'ER_NO_REFERENCED_ROW_2') return res.status(404).json({ error: 'media not found' });
     serverError(res, err);
   }
 };
@@ -411,7 +427,7 @@ exports.remove = async (req, res) => {
     await conn.execute('UPDATE Media SET sequel_parent_id = NULL WHERE sequel_parent_id = ?', [id]);
     await conn.execute('UPDATE Media SET remake_parent_id = NULL WHERE remake_parent_id = ?', [id]);
     for (const table of ['Subgenre', 'Watchlist', 'Media_Actor', 'Media_Platform',
-                         'Media_Book', 'Media_Visit', 'Movies', 'Series'])
+                         'Media_Book', 'Movies', 'Series'])
       await conn.execute(`DELETE FROM ${table} WHERE id = ?`, [id]);
     const [r] = await conn.execute('DELETE FROM Media WHERE id = ?', [id]);
 

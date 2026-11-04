@@ -75,3 +75,27 @@ exports.create = async (req, res) => {
     serverError(res, err);
   }
 };
+
+// DELETE /universes/:id   (admin / developer)
+// Its media are kept and become standalone (universe_id = NULL), in one transaction.
+exports.remove = async (req, res) => {
+  const id = req.params.id;
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+    const [unlinked] = await conn.execute('UPDATE Media SET universe_id = NULL WHERE universe_id = ?', [id]);
+    const [r] = await conn.execute('DELETE FROM Universe WHERE universe_id = ?', [id]);
+
+    if (r.affectedRows === 0) {
+      await conn.rollback();
+      return res.status(404).json({ error: 'universe not found' });
+    }
+    await conn.commit();
+    res.json({ universe_id: Number(id), media_unlinked: unlinked.affectedRows });
+  } catch (err) {
+    await conn.rollback();
+    serverError(res, err);
+  } finally {
+    conn.release();
+  }
+};

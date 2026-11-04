@@ -7,18 +7,30 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/fonts.css">
+  <link rel="stylesheet" href="css/watchlist.css">
 </head>
 <body>
   <div id="site-header"></div>
   <main>
     <!-- Page 8: Watch list -->
-    <div class="page-head">
+    <div class="wl-layout">
       <div>
-        <h1>My watchlist</h1>
-        <p class="muted" id="wl-count"></p>
+        <div class="page-head">
+          <div>
+            <h1>My watchlist</h1>
+            <p class="muted" id="wl-count"></p>
+          </div>
+        </div>
+        <div id="wl-grid" class="grid"></div>
       </div>
+      <aside class="panel wl-filters hidden" id="wl-filters">
+        <h2>Filter</h2>
+        <span class="field-label" id="wl-genre-label">Genre</span>
+        <div class="tags" id="wl-genres" role="radiogroup" aria-labelledby="wl-genre-label"></div>
+        <span class="field-label" id="wl-platform-label">Streaming platform</span>
+        <div id="wl-platforms" role="group" aria-labelledby="wl-platform-label"></div>
+      </aside>
     </div>
-    <div id="wl-grid" class="grid"></div>
   </main>
   <script src="js/common.js"></script>
   <script src="js/watchlist.js"></script>

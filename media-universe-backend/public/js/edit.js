@@ -157,6 +157,11 @@ async function init() {
   else { $('#publish_date').value = new Date().toISOString().slice(0, 10); $('#rating').value = 0; }
   showTypeFields();
 
+  // The Delete button acts on the universe picked in the dropdown.
+  const syncUniverseDelete = () => { $('#universe-delete').disabled = !$('#universe_id').value; };
+  $('#universe_id').onchange = syncUniverseDelete;
+  syncUniverseDelete();
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     addActor($('#actor-input').value);   // a name typed but not yet added still counts
@@ -196,12 +201,34 @@ async function init() {
       const u = await api('/universes', { method: 'POST', body: { universe_name: $('#universe_name').value } });
       $('#universe_id').insertAdjacentHTML('beforeend', `<option value="${u.universe_id}">${esc(u.universe_name)}</option>`);
       $('#universe_id').value = u.universe_id;
+      syncUniverseDelete();
       $('#universe_name').value = '';
       out.textContent = `Added “${u.universe_name}” and selected it.`;
       out.className = 'form-msg ok';
     } catch (err) { out.textContent = err.message; out.className = 'form-msg error'; }
   };
   $('#universe-add').onclick = addUniverse;
+
+  $('#universe-delete').onclick = async () => {
+    const out = $('#universe-msg');
+    const select = $('#universe_id');
+    const id = select.value;
+    if (!id) return;
+    try {
+      const u = await api(`/universes/${id}`);
+      const titles = u.media_count === 1 ? 'Its 1 title is kept, but no longer belongs'
+                                         : `Its ${u.media_count} titles are kept, but no longer belong`;
+      if (!confirm(`Delete the universe “${u.universe_name}”?` +
+                   (u.media_count ? ` ${titles} to a universe.` : ''))) return;
+      await api(`/universes/${id}`, { method: 'DELETE' });
+      select.querySelector(`option[value="${id}"]`).remove();
+      select.value = '';
+      syncUniverseDelete();
+      out.textContent = `Deleted “${u.universe_name}”.`;
+      out.className = 'form-msg ok';
+      toast('Universe deleted');
+    } catch (err) { out.textContent = err.message; out.className = 'form-msg error'; }
+  };
   $('#universe_name').onkeydown = (e) => {
     if (e.key !== 'Enter') return;
     e.preventDefault();

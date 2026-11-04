@@ -1,0 +1,5 @@
+/* public/css/edit.css — Edit page only. Link it after style.css. */
+.inline-add select { flex: 1; min-width: 0; }
+#universe-delete { flex: none; border-radius: 10px; }
+#universe-delete:disabled { opacity: .4; cursor: not-allowed; }
+#universe-delete:disabled:hover { background: transparent; color: var(--danger); }

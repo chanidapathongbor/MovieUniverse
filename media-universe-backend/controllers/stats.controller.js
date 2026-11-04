@@ -2,14 +2,14 @@
 // User Flow 10: admin opens statistics -> DB SELECT -> backend aggregates and sends back.
 const pool = require('../db');
 const { serverError } = require('../middleware/errors');
-const { MEDIA_SELECT } = require('./media.query');
+const { MEDIA_SELECT, sumVisits } = require('./media.query');
 const { addMediaThumbnail } = require('../thumbnails');
 
 // GET /stats — dashboard overview.
 exports.overview = async (req, res) => {
   try {
     const [[totals], [usersByRole], [byType], [byGenre], [byUniverse],
-           [topWatchlisted], [topRated]] = await Promise.all([
+           [topWatchlisted], [topRated], [visited]] = await Promise.all([
       pool.query(`
         SELECT (SELECT COUNT(*) FROM Media)     AS media,
                (SELECT COUNT(*) FROM Movies)    AS movies,
@@ -17,8 +17,7 @@ exports.overview = async (req, res) => {
                (SELECT COUNT(*) FROM Book)      AS books,
                (SELECT COUNT(*) FROM Universe)  AS universes,
                (SELECT COUNT(*) FROM User)      AS accounts,
-               (SELECT COUNT(*) FROM Watchlist) AS watchlist_entries,
-               (SELECT COUNT(*) FROM Media_Visit) AS visits`),
+               (SELECT COUNT(*) FROM Watchlist) AS watchlist_entries`),
       pool.query(`
         SELECT 'user' AS role, COUNT(*) AS count FROM Normal_User
         UNION ALL SELECT 'admin', COUNT(*) FROM Admin
@@ -48,11 +47,12 @@ exports.overview = async (req, res) => {
       pool.query(`
         SELECT id, title, rating FROM Media
         ORDER BY rating DESC, title
-        LIMIT 10`)
+        LIMIT 10`),
+      pool.query('SELECT visits FROM Media WHERE visits IS NOT NULL')
     ]);
 
     res.json({
-      totals: totals[0],
+      totals: { ...totals[0], visits: visited.reduce((sum, m) => sum + sumVisits(m.visits), 0) },
       users_by_role: usersByRole,
       media_by_type: byType,
       media_by_genre: byGenre,
@@ -117,8 +117,8 @@ exports.group = async (req, res) => {
 // Visits per day (days without visits count as 0) and the most visited titles in that period.
 const VISIT_TYPE_JOIN = {
   all:    '',
-  movie:  'JOIN Movies t ON t.id = v.id',
-  series: 'JOIN Series t ON t.id = v.id'
+  movie:  'JOIN Movies t ON t.id = m.id',
+  series: 'JOIN Series t ON t.id = m.id'
 };
 const VISIT_DAYS = [7, 30, 90];
 
@@ -132,24 +132,16 @@ exports.visits = async (req, res) => {
     return res.status(400).json({ error: `days must be one of: ${VISIT_DAYS.join(', ')}` });
 
   try {
-    const inPeriod = 'v.visited_at >= CURDATE() - INTERVAL ? DAY';
-    const [[[{ today }]], [perDay], [top]] = await Promise.all([
+    const [[[{ today }]], [media]] = await Promise.all([
       pool.query("SELECT DATE_FORMAT(CURDATE(), '%Y-%m-%d') AS today"),
-      pool.query(`
-        SELECT DATE_FORMAT(v.visited_at, '%Y-%m-%d') AS day, COUNT(*) AS visits
-        FROM Media_Visit v ${typeJoin}
-        WHERE ${inPeriod}
-        GROUP BY day`, [days - 1]),
-      pool.query(`
-        SELECT m.id, m.title, COUNT(*) AS visits
-        FROM Media_Visit v ${typeJoin} JOIN Media m ON m.id = v.id
-        WHERE ${inPeriod}
-        GROUP BY m.id, m.title
-        ORDER BY visits DESC, m.title
-        LIMIT 5`, [days - 1])
+      pool.query(`SELECT m.id, m.title, m.visits FROM Media m ${typeJoin} WHERE m.visits IS NOT NULL`)
     ]);
 
-    const counts = new Map(perDay.map((row) => [row.day, row.visits]));
+    const counts = new Map();
+    for (const m of media)
+      for (const [day, count] of Object.entries(m.visits))
+        counts.set(day, (counts.get(day) || 0) + count);
+
     const series = [];
     for (let back = days - 1; back >= 0; back--) {
       const date = new Date(`${today}T00:00:00Z`);
@@ -157,6 +149,12 @@ exports.visits = async (req, res) => {
       const day = date.toISOString().slice(0, 10);
       series.push({ day, visits: counts.get(day) || 0 });
     }
+
+    const top = media
+      .map((m) => ({ id: m.id, title: m.title, visits: sumVisits(m.visits, series[0].day) }))
+      .filter((m) => m.visits > 0)
+      .sort((a, b) => b.visits - a.visits || a.title.localeCompare(b.title))
+      .slice(0, 5);
     res.json({ type, days, total: series.reduce((sum, p) => sum + p.visits, 0), series, top });
   } catch (err) {
     serverError(res, err);
@@ -170,7 +168,7 @@ exports.mediaProfile = async (req, res) => {
     const [rows] = await pool.execute(`
       SELECT x.*,
         (SELECT COUNT(*) FROM Watchlist w      WHERE w.id = x.id)  AS watchlist_count,
-        (SELECT COUNT(*) FROM Media_Visit v    WHERE v.id = x.id)  AS visit_count,
+        (SELECT visits FROM Media v            WHERE v.id = x.id)  AS visits,
         (SELECT COUNT(*) FROM Media_Actor ma   WHERE ma.id = x.id) AS actor_count,
         (SELECT COUNT(*) FROM Media_Platform p WHERE p.id = x.id)  AS platform_count,
         (SELECT COUNT(*) FROM Media_Book mb    WHERE mb.id = x.id) AS book_count,
@@ -185,7 +183,8 @@ exports.mediaProfile = async (req, res) => {
       SELECT u.accountID, u.username
       FROM Watchlist w JOIN User u ON u.accountID = w.accountID
       WHERE w.id = ? ORDER BY u.username`, [id]);
-    res.json({ ...addMediaThumbnail(rows[0]), watchers });
+    const { visits, ...profile } = rows[0];
+    res.json({ ...addMediaThumbnail(profile), visit_count: sumVisits(visits), watchers });
   } catch (err) {
     serverError(res, err);
   }
