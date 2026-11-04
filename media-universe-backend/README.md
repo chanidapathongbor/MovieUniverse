@@ -16,7 +16,7 @@ controllers/*.controller.js one file per feature
 routes/*.routes.js          URL -> controller function, and who may call it
 sql/seed_staff_accounts.sql demo admin and developer accounts (bcrypt hashes)
 sql/routines.sql            stored procedure get_universe_media + trigger media_inherit_universe
-sql/visits.sql              table Media_Visit: one row per visit to an information page
+sql/visits.sql              JSON column Media.visits: visits per day to an information page
 sql/app_user.sql            least-privilege MySQL account media_app
 public/                     the 10 pages (HTML + css/style.css + js/)
 curl-commands.txt           ready-to-paste curl commands for every endpoint
@@ -45,7 +45,7 @@ Roles come from the disjoint subtypes of `User`: `Normal_User` → `user`, `Admi
 |---|:-:|:-:|:-:|:-:|
 | browse, search, genres, universes, information page | ✓ | ✓ | ✓ | ✓ |
 | keep a watchlist | | ✓ | | |
-| add / edit / delete media, change genre, add universe | | | ✓ | ✓ |
+| add / edit / delete media, change genre, add / delete universe | | | ✓ | ✓ |
 | statistics, see all accounts | | | ✓ | ✓ |
 | change an account's role, delete an account | | | | ✓ |
 
@@ -75,6 +75,7 @@ change or account deletion logs that account out immediately.
 | 9 Discover universe · Page 6 | `GET /universes` | everyone | top 10 |
 | Universe page · Page 7 | `GET /universes/:id` | everyone | media from `CALL get_universe_media(?)` + books |
 | | `POST /universes` `{universe_name}` | admin, developer | |
+| | `DELETE /universes/:id` | admin, developer | its media are kept and become standalone (`universe_id = NULL`) |
 | 4 Add to watchlist · Page 8 | `POST /watchlist` `{media_id}` | user | 409 if already added |
 | Watchlist page | `GET /watchlist` | user | |
 | 6 Remove from watchlist | `DELETE /watchlist/:mediaId` | user | |

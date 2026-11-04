@@ -18,3 +18,7 @@ exports.MEDIA_SELECT = `
   LEFT JOIN Genre g    ON g.genre_id    = m.main_genre_id
   LEFT JOIN Director d ON d.director_id = m.director_id
   LEFT JOIN Universe u ON u.universe_id = m.universe_id`;
+
+// Adds up a Media.visits JSON value ({ "YYYY-MM-DD": count }), optionally from one day onward.
+exports.sumVisits = (visits, since = '') =>
+  Object.entries(visits || {}).reduce((sum, [day, count]) => (day >= since ? sum + count : sum), 0);

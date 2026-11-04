@@ -6,15 +6,50 @@ const { serverError } = require('../middleware/errors');
 const { MEDIA_SELECT } = require('./media.query');
 const { addMediaThumbnail } = require('../thumbnails');
 
-// GET /watchlist — the logged-in user's watchlist.
+const isId = (value) => /^[1-9]\d*$/.test(String(value));
+
+// GET /watchlist?genre=&platforms=1,2 — the logged-in user's watchlist.
+// genre: main genre OR sub genre. platforms: on ANY of these platforms.
 exports.list = async (req, res) => {
   try {
+    const where = ['w.accountID = ?'];
+    const params = [req.user.accountID];
+    if (isId(req.query.genre)) {
+      where.push(`(m.main_genre_id = ? OR EXISTS
+                   (SELECT 1 FROM Subgenre sg WHERE sg.id = m.id AND sg.genre_id = ?))`);
+      params.push(req.query.genre, req.query.genre);
+    }
+    const platforms = String(req.query.platforms || '').split(',').filter(isId);
+    if (platforms.length) {
+      where.push(`EXISTS (SELECT 1 FROM Media_Platform mp
+                          WHERE mp.id = m.id AND mp.platform_id IN (${platforms.map(() => '?').join(', ')}))`);
+      params.push(...platforms);
+    }
     const [rows] = await pool.execute(`
       ${MEDIA_SELECT}
       JOIN Watchlist w ON w.id = m.id
-      WHERE w.accountID = ?
-      ORDER BY m.title`, [req.user.accountID]);
+      WHERE ${where.join(' AND ')}
+      ORDER BY m.title`, params);
     res.json(rows.map(addMediaThumbnail));
+  } catch (err) {
+    serverError(res, err);
+  }
+};
+
+// GET /watchlist/filters — for the whole watchlist: its size and how many titles each platform has.
+exports.filters = async (req, res) => {
+  try {
+    const [[[{ total }]], [platforms]] = await Promise.all([
+      pool.execute('SELECT COUNT(*) AS total FROM Watchlist WHERE accountID = ?', [req.user.accountID]),
+      pool.execute(`
+        SELECT p.platform_id, p.platform_name, COUNT(w.id) AS media_count
+        FROM Platform p
+        LEFT JOIN Media_Platform mp ON mp.platform_id = p.platform_id
+        LEFT JOIN Watchlist w ON w.id = mp.id AND w.accountID = ?
+        GROUP BY p.platform_id, p.platform_name
+        ORDER BY media_count DESC, p.platform_name`, [req.user.accountID])
+    ]);
+    res.json({ total, platforms });
   } catch (err) {
     serverError(res, err);
   }

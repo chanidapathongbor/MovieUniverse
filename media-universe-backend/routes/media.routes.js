@@ -6,6 +6,7 @@ const staff = requireRole('admin', 'developer');
 
 router.get('/',            c.list);                 // Home page (filters + sort)
 router.get('/search',      c.search);               // Flow 1: search  (must be before /:id)
+router.get('/toprates',    c.toprates);             // Home page: top 5 
 router.get('/:id',         c.getOne);               // Flow 2: click banner -> information page
 router.post('/:id/visit',  c.recordVisit);          // information page opened: count one visit
 router.post('/',           staff, c.create);        // Flow 7: admin adds movie / series

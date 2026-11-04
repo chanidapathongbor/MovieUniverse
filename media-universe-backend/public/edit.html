@@ -7,6 +7,7 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/fonts.css">
+  <link rel="stylesheet" href="css/edit.css">
 </head>
 <body class="edit-page">
   <div id="site-header"></div>
@@ -90,7 +91,11 @@
           <div class="tags" id="platform_ids"></div>
         </div>
         <div class="form-grid two-col">
-          <div class="field"><label for="universe_id">Universe</label><select id="universe_id"></select>
+          <div class="field"><label for="universe_id">Universe</label>
+            <div class="inline-add">
+              <select id="universe_id"></select>
+              <button type="button" class="btn btn-danger" id="universe-delete" disabled>Delete</button>
+            </div>
             <p class="hint">Leave empty on a sequel/remake: the trigger copies the parent&#39;s universe.</p></div>
           <div class="field">
             <label for="universe_name">New universe</label>

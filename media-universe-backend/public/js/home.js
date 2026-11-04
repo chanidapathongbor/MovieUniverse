@@ -49,6 +49,13 @@ async function loadGrid() {
   $('#grid').innerHTML = media.length ? media.map((m) => mediaCard(m)).join('') : emptyState('Nothing matches these filters.');
 }
 
+async function loadTopMovies() {
+  const movies = await api('/media/toprates');
+  $('#top-movies').innerHTML = movies.length
+    ? movies.map((m) => mediaCard(m)).join('')
+    : emptyState('No movies yet.');
+}
+
 async function init() {
   const genres = await api('/genres');
   fillSelect($('#genre-filter'), genres, (g) => [g.genre_id, g.genre_name], 'All genres');
@@ -62,7 +69,7 @@ async function init() {
   $('#genre-filter').addEventListener('change', (e) => { state.genre = e.target.value; loadGrid(); });
   $('#sort').addEventListener('change', (e) => { state.sort = e.target.value; loadGrid(); });
 
-  await Promise.all([loadHero(), loadUniverses(), loadGrid()]);
+  await Promise.all([loadHero(), loadTopMovies(), loadUniverses(), loadGrid()]);
 }
 
 init().catch((err) => toast(err.message, 'error'));

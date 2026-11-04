@@ -1,0 +1,16 @@
+/* public/css/watchlist.css — Watchlist page only. Link it after style.css. */
+.wl-layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 32px; align-items: start; }
+.wl-layout.no-filters { grid-template-columns: minmax(0, 1fr); }
+.wl-filters { border: 0; position: sticky; top: 80px; }
+.wl-filters h2 { font-size: 1.2rem; font-weight: 500; margin: 0 0 16px; }
+.wl-filters .field-label:not(:first-of-type) { margin-top: 22px; }
+
+.wl-platform { display: flex; align-items: center; gap: 12px; margin: 0; padding: 7px 0; font-size: .92rem; color: var(--text); cursor: pointer; }
+.wl-platform-name { flex: 1; min-width: 0; }
+.wl-platform-count { color: var(--muted); font-variant-numeric: tabular-nums; }
+.wl-platform input { flex: none; width: 20px; height: 20px; margin: 0; padding: 0; accent-color: var(--accent); cursor: pointer; }
+
+@media (max-width: 900px) {
+  .wl-layout { grid-template-columns: minmax(0, 1fr); }
+  .wl-filters { position: static; order: -1; }
+}
