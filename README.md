@@ -21,6 +21,7 @@ searching the internet by hand.
 ```
 Databasse_project/
 ├── README.md                     ← this file
+├── USER_JOURNEY.md               what guests, users, admins and developers do, step by step
 ├── CSS326-Project_Proposal_…pdf  proposal (ERD, user flows, physical design)
 ├── CSS326_Final_Project_*.pdf    criteria, rubric, hashing handout
 ├── docs/                         project page for GitHub Pages (screenshots, no live data)
@@ -31,6 +32,7 @@ Databasse_project/
 │   └── book_image/               book covers
 └── media-universe-backend/       the app (API + frontend)
     ├── README.md                 API reference
+    ├── HOW_IT_WORKS.md           how the main functions work, step by step
     ├── app.js · db.js · thumbnails.js
     ├── controllers/ · routes/ · middleware/
     ├── sql/                      staff accounts, routines, app user
@@ -40,7 +42,7 @@ Databasse_project/
 
 ## Setup (once)
 
-**1. Database** — in MySQL Workbench, as root, run these four files in order:
+**1. Database** — in MySQL Workbench, as root, run these five files in order:
 
 | # | File | What it does |
 |---|---|---|
@@ -48,7 +50,7 @@ Databasse_project/
 | 2 | `media-universe-backend/sql/seed_staff_accounts.sql` | demo admin + developer (bcrypt-hashed) |
 | 3 | `media-universe-backend/sql/routines.sql` | stored procedure + trigger |
 | 4 | `media-universe-backend/sql/app_user.sql` | MySQL account `media_app` for the app |
-| 5 | `media-universe-backend/sql/visits.sql` | JSON column `Media.visits` for the visit statistics |
+| 5 | `media-universe-backend/sql/visits.sql` | adds the JSON column `Media.visits` (visits per day) for the visit statistics |
 
 Running 1–3 again resets the data to a clean state (step 4 only needs to run once).
 

@@ -7,9 +7,9 @@ const { addMediaThumbnail, addBookThumbnail } = require('../thumbnails');
 
 // ---------------------------------------------------------------- helpers
 
-const isId = (v) => Number.isInteger(Number(v)) && Number(v) > 0;
-const isDate = (v) => /^\d{4}-\d{2}-\d{2}$/.test(v) && !isNaN(new Date(v));
-const isName = (v) => typeof v === 'string' && v.trim() !== '' && v.trim().length <= 100;
+const isId = (v) => Number.isInteger(Number(v)) && Number(v) > 0; /// create a function to check if v is not Nan and Int
+const isDate = (v) => /^\d{4}-\d{2}-\d{2}$/.test(v) && !isNaN(new Date(v)); /// Check if i tdate
+const isName = (v) => typeof v === 'string' && v.trim() !== '' && v.trim().length <= 100; /// check if it string, not None and under 100 char
 
 // Text columns of Media and their max length (from the physical design).
 const TEXT_COLUMNS = {
@@ -19,7 +19,7 @@ const TEXT_COLUMNS = {
 const REQUIRED_ID_COLUMNS = ['director_id', 'main_genre_id'];
 const OPTIONAL_ID_COLUMNS = ['universe_id', 'sequel_parent_id', 'remake_parent_id'];
 const MEDIA_COLUMNS = [...Object.keys(TEXT_COLUMNS), 'publish_date', 'rating',
-                       ...REQUIRED_ID_COLUMNS, ...OPTIONAL_ID_COLUMNS];
+                       ...REQUIRED_ID_COLUMNS, ...OPTIONAL_ID_COLUMNS]; /// flatten the dict and list.
 
 // M:N tables linked to one media. Body key -> junction table and its other column.
 const RELATIONS = {
@@ -27,16 +27,16 @@ const RELATIONS = {
   actor_ids:    { table: 'Media_Actor',    column: 'actor_id' },
   platform_ids: { table: 'Media_Platform', column: 'platform_id' },
   isbns:        { table: 'Media_Book',     column: 'ISBN' }
-};
+}; /// relation dict
 
 // Returns an error message, or null when the body is fine.
 // isCreate = true  -> every required field must be present (POST)
 // isCreate = false -> only check the fields that were sent (PUT)
 function validateMedia(body, isCreate) {
-  for (const [col, max] of Object.entries(TEXT_COLUMNS)) {
-    if (body[col] === undefined) { if (isCreate) return `${col} is required`; continue; }
+  for (const [col, max] of Object.entries(TEXT_COLUMNS)) { /// itersate in the colummns to check each column
+    if (body[col] === undefined) { if (isCreate) return `${col} is required`; continue; } /// as above
     if (typeof body[col] !== 'string' || body[col].trim() === '' || body[col].length > max)
-      return `${col} must be text of 1 to ${max} characters`;
+      return `${col} must be text of 1 to ${max} characters`; /// check string if it excedd the the limitations
   }
   if (body.publish_date !== undefined || isCreate)
     if (!isDate(body.publish_date)) return 'publish_date must be YYYY-MM-DD';
@@ -45,7 +45,7 @@ function validateMedia(body, isCreate) {
     if (body.rating === null || body.rating === '' || isNaN(r) || r < 0 || r >= 9.9)
       return 'rating must be a number from 0 to 9.9';
   }
-  if (body.director_name !== undefined && !isName(body.director_name))
+  if (body.director_name !== undefined && !isName(body.director_name)) /// name != undefined and it not a name, ex name = "12". It not undefined but not a name
     return 'director_name must be text of 1 to 100 characters';
   if (body.actor_names !== undefined &&
       (!Array.isArray(body.actor_names) || !body.actor_names.every(isName)))
@@ -62,6 +62,8 @@ function validateMedia(body, isCreate) {
     return "type must be 'movie' or 'series'";
   if (body.duration !== undefined || (isCreate && body.type === 'movie')) {
     const d = Number(body.duration);
+
+    /// set duration here
     if (isNaN(d) || d <= 0 || d > 999.99) return 'duration (minutes) must be between 0 and 999.99';
   }
   if (body.episode_number !== undefined || (isCreate && body.type === 'series'))

@@ -2,7 +2,9 @@
 
 Node.js + Express + mysql2 app for the `MediaDB` database. The frontend lives in `public/`
 and is served by the same server. **Setup, the demo script and the rubric checklist are in the
-[project README](../README.md).** This file is the technical reference.
+[project README](../README.md).** This file is the technical reference. For a step-by-step
+explanation of the main functions (thumbnails, listing, search, the stored procedure, the trigger…)
+see [HOW_IT_WORKS.md](HOW_IT_WORKS.md).
 
 ```
 app.js                      mounts routers, serves public/ and the thumbnails, error handler
