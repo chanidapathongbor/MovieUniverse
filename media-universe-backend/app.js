@@ -28,6 +28,7 @@ app.use((req, res) => res.status(404).json({ error: 'endpoint not found' }));
 
 // Bad JSON body -> 400, anything else -> generic 500 (details only in the terminal).
 app.use(errorHandler);
+app.set('trust proxy', 1)
 
 const PORT = process.env.PORT || 4500;
 app.listen(PORT, () => console.log(`Media Universe on http://localhost:${PORT}`));
