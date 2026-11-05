@@ -42,7 +42,7 @@ function validateMedia(body, isCreate) {
     if (!isDate(body.publish_date)) return 'publish_date must be YYYY-MM-DD';
   if (body.rating !== undefined || isCreate) {
     const r = Number(body.rating);
-    if (body.rating === null || body.rating === '' || isNaN(r) || r < 0 || r > 9.9)
+    if (body.rating === null || body.rating === '' || isNaN(r) || r < 0 || r >= 9.9)
       return 'rating must be a number from 0 to 9.9';
   }
   if (body.director_name !== undefined && !isName(body.director_name))
@@ -146,7 +146,7 @@ function readLimit(value, fallback = 50) {
 exports.toprates = async (req,res) => {
   try {
     const [r] = await pool.query(
-      `${MEDIA_SELECT} ORDER BY m.rating DESC LIMIT 5`
+      `${MEDIA_SELECT} ORDER BY m.rating DESC LIMIT 10`
     );
     res.json(r.map(addMediaThumbnail));
   } catch (err) {

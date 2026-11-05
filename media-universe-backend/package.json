@@ -4,7 +4,7 @@
   "description": "CSS326 Project - Cross-referencing media universe (backend API)",
   "main": "app.js",
   "scripts": {
-    "start": "node app.js"
+    "start": "node media-universe-backend/app.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
