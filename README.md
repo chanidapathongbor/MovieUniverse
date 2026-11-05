@@ -48,7 +48,7 @@ Databasse_project/
 | 2 | `media-universe-backend/sql/seed_staff_accounts.sql` | demo admin + developer (bcrypt-hashed) |
 | 3 | `media-universe-backend/sql/routines.sql` | stored procedure + trigger |
 | 4 | `media-universe-backend/sql/app_user.sql` | MySQL account `media_app` for the app |
-| 5 | `media-universe-backend/sql/visits.sql` | table `Media_Visit` for the visit statistics |
+| 5 | `media-universe-backend/sql/visits.sql` | JSON column `Media.visits` for the visit statistics |
 
 Running 1–3 again resets the data to a clean state (step 4 only needs to run once).
 
@@ -94,7 +94,7 @@ npm start                     # → http://localhost:4500
 | 6 | Discover universes (top 10) | `universes.html` | everyone |
 | 7 | Universe — release-order timeline + books | `universe.html?id=` | everyone |
 | 8 | My watchlist | `watchlist.html` | user |
-| 9 | Edit — add / edit / delete media, add universe | `edit.html` | admin, developer |
+| 9 | Edit — add / edit / delete media, add / delete universe | `edit.html` | admin, developer |
 | 10 | Statistics + accounts | `stats.html` | admin, developer |
 
 ## Roles
@@ -103,7 +103,7 @@ npm start                     # → http://localhost:4500
 |---|:-:|:-:|:-:|:-:|
 | browse, search, genres, universes, information page | ✓ | ✓ | ✓ | ✓ |
 | keep a watchlist | | ✓ | | |
-| add / edit / delete media, change genre, add universe | | | ✓ | ✓ |
+| add / edit / delete media, change genre, add / delete universe | | | ✓ | ✓ |
 | statistics, see all accounts | | | ✓ | ✓ |
 | change roles, delete accounts | | | | ✓ |
 

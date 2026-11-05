@@ -2,11 +2,12 @@
   "name": "movieuniverse",
   "version": "1.0.0",
   "description": "**CSS326 Database Programming Laboratory · Final project · Semester 1, 2026**",
-  "main": "index.js",
+  "main": "media-universe-backend/app.js",
   "directories": {
     "doc": "docs"
   },
   "scripts": {
+    "start": "node media-universe-backend/app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
